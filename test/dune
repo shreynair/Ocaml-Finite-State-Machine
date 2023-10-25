@@ -1,0 +1,6 @@
+(library
+  (name testUtils)
+  (libraries str p5 oUnit))
+(env
+  (dev
+      (flags (:standard -w -A))))
