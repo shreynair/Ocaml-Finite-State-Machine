@@ -126,6 +126,8 @@ let test_nfa_new_states _ =
   ; delta= [(0, Some 'a', 1); (0, Some 'a', 2); (2, Some 'b', 3); (2, None, 4); (4, Some 'a', 4)]
   ; q0= 0
   ; fs= [1; 3] } in
+
+
   assert_set_set_eq [[]; []] (new_states m1 []) ;
   assert_set_set_eq [[1; 2; 4]; []] (new_states m1 [0]) ;
   assert_set_set_eq [[4]; []] (new_states m1 [3; 4]) ;

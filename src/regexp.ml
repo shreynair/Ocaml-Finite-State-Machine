@@ -1,5 +1,6 @@
 open List
 open Nfa
+open Sets
 
 (*********)
 (* Types *)
@@ -27,7 +28,38 @@ let fresh =
 (*******************************)
 
 let regexp_to_nfa (regexp: regexp_t) : (int, char) nfa_t =
-  failwith "unimplemented"
+  let rec regex_to_nfa_helper (regexp: regexp_t) : (int, char) nfa_t =
+    match regexp with
+      | Empty_String ->
+        let start = fresh () in
+        {sigma = []; qs = [start]; q0 = start; fs = [start]; delta = []}
+      | Char x ->
+        let start = fresh () in
+        let finish = fresh () in
+        {sigma = [x]; qs = [start; finish]; q0 = start; fs = [finish]; delta = [(start, Some x, finish)]}
+      | Union (x,y) ->
+        let union_state = fresh () in
+        let x_nfa = regex_to_nfa_helper x in
+        let y_nfa = regex_to_nfa_helper y in
+
+        {sigma = union x_nfa.sigma y_nfa.sigma; qs = insert union_state (union x_nfa.qs y_nfa.qs); q0 = union_state; 
+        fs = union x_nfa.fs y_nfa.fs; delta = insert_all [(union_state, None, x_nfa.q0); (union_state, None, y_nfa.q0)] (union x_nfa.delta y_nfa.delta)}
+      | Concat (x,y) -> 
+        let x_nfa = regex_to_nfa_helper x in
+        let y_nfa = regex_to_nfa_helper y in
+
+        let onset = x_nfa.fs in
+        let closure = y_nfa.q0 in
+
+        let bridge = map (fun a -> (a, None, y_nfa.q0)) x_nfa.fs in
+        {sigma = union x_nfa.sigma y_nfa.sigma; qs = union x_nfa.qs y_nfa.qs; q0 = x_nfa.q0; fs = y_nfa.fs; delta = insert_all bridge (union x_nfa.delta y_nfa.delta)}
+      | Star x ->
+        let x_nfa = regex_to_nfa_helper x in
+        let start = fresh () in
+        let restarts = map (fun a -> (a, None, x_nfa.q0)) x_nfa.fs in
+        {sigma = x_nfa.sigma; qs = insert start x_nfa.qs; q0 = start; fs = insert start x_nfa.fs; delta = insert (start, None, x_nfa.q0 )(insert_all restarts x_nfa.delta) }
+  in
+  regex_to_nfa_helper regexp 
 
 (*****************************************************************)
 (* Below this point is parser code that YOU DO NOT NEED TO TOUCH *)
